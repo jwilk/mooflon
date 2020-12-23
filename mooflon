@@ -1,0 +1,95 @@
+#!/usr/bin/python3
+
+# Copyright © 2013-2020 Jakub Wilk <jwilk@jwilk.net>
+# SPDX-License-Identifier: MIT
+
+import argparse
+import functools
+import hashlib
+import os
+import posixpath
+import subprocess
+import sys
+import tempfile
+import urllib.parse
+
+f''  # Python >= 3.6 is required
+
+cache_dir = '/var/cache/apt/archives'
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('apt', metavar='APT', choices=('apt', 'apt-get'))
+    ap.add_argument('cmd', metavar='INSTALL')
+    ap.add_argument('args', metavar='ARGS', nargs=argparse.REMAINDER)
+    ag = ap.add_mutually_exclusive_group(required=True)
+    ag.add_argument('-p', '--print-urls', action='store_true')
+    ag.add_argument('-i', '--import-debs', metavar='DEB', nargs='+', default=())
+    ap.add_argument('-m', '--move-debs', action='store_true')
+    ap.add_argument('--rewrite-url', dest='rewrite', metavar='URL', nargs=2, action='append', default=[])
+    options = ap.parse_args()
+    cmdline = [
+        options.apt,
+        options.cmd,
+        *options.args,
+        '-qqqy',
+        '-o', 'Apt::Cmd::Disable-Script-Warning=1',
+        '-o', 'Acquire::ForceHash=sha256',
+        '--print-uris',
+    ]
+    with tempfile.TemporaryDirectory(prefix='mooflon.') as tmpdir:
+        cp = subprocess.run(cmdline, cwd=tmpdir, stdout=subprocess.PIPE, check=True)
+    lines = cp.stdout.splitlines()
+    cache = {}
+    for line in lines:
+        line = line.decode('ASCII')
+        (url, name, size, digest) = line.split(' ')
+        url = url.strip("'")
+        for u1, u2 in options.rewrite:
+            if url.startswith(u1):
+                url = u2 + url[len(u1):]
+                break
+        if options.print_urls:
+            print(url)
+        else:
+            assert digest.startswith('SHA256:')
+            digest = digest[7:]
+            cache[name] = (name, digest)
+            uname = posixpath.basename(url)
+            cache[uname] = (name, digest)
+            uname = urllib.parse.unquote(uname)
+            cache[uname] = (name, digest)
+    eprint = functools.partial(print, 'mooflon:', file=sys.stderr)
+    for src_path in options.import_debs:
+        uname = os.path.basename(src_path)
+        try:
+            (name, xdigest) = cache[uname]
+        except KeyError:
+            eprint(f'{src_path}: not planned for install')
+        m = hashlib.sha256()
+        eprint(src_path, '->', end=' ')
+        with open(src_path, 'rb') as file:
+            blob = file.read()
+        m.update(blob)
+        digest = m.hexdigest().lower()
+        if xdigest != digest:
+            eprint('hash mismatch')
+            continue
+        path = f'{cache_dir}/{name}'
+        with open(path, 'xb') as file:
+            file.write(blob)
+        print(path, file=sys.stderr)
+        if options.move_debs:
+            os.remove(src_path)
+    if options.import_debs:
+        cmdline = [
+            options.apt,
+            options.cmd,
+            *options.args,
+        ]
+        os.execvp(cmdline[0], cmdline)
+
+if __name__ == '__main__':
+    main()
+
+# vim:ts=4 sts=4 sw=4 et
