@@ -66,6 +66,7 @@ def main():
             (name, xdigest) = cache[uname]
         except KeyError:
             eprint(f'{src_path}: not planned for install')
+            continue
         m = hashlib.sha256()
         eprint(src_path, '->', end=' ')
         with open(src_path, 'rb') as file:
