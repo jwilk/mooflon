@@ -19,13 +19,23 @@ cache_dir = '/var/cache/apt/archives'
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('apt', metavar='APT', choices=('apt', 'apt-get'))
-    ap.add_argument('cmd', metavar='INSTALL')
-    ap.add_argument('args', metavar='ARGS', nargs=argparse.REMAINDER)
+    ap.add_argument('apt', metavar='APT', choices=('apt', 'apt-get'), help='"apt" or "apt-get"')
+    ap.add_argument('cmd', metavar='INSTALL',
+        help='subcommand for "apt" or "apt-get", such as "install" or "upgrade"'
+    )
+    ap.add_argument('args', metavar='ARGS', nargs=argparse.REMAINDER,
+        help='remaining arguments for "apt install" or so'
+    )
     ag = ap.add_mutually_exclusive_group(required=True)
-    ag.add_argument('-p', '--print-urls', action='store_true')
-    ag.add_argument('-i', '--import-debs', metavar='DEB', nargs='+', default=())
-    ap.add_argument('-m', '--move-debs', action='store_true')
+    ag.add_argument('-p', '--print-urls', action='store_true',
+        help='only print URLs for .deb files to download'
+    )
+    ag.add_argument('-i', '--import-debs', metavar='DEB', nargs='+', default=(),
+        help='import these .deb files before install'
+    )
+    ap.add_argument('-m', '--move-debs', action='store_true',
+        help='remove imported .deb files'
+    )
     ap.add_argument('--rewrite-url', dest='rewrite', metavar='URL', nargs=2, action='append', default=[])
     options = ap.parse_args()
     cmdline = [
