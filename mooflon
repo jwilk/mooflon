@@ -13,7 +13,7 @@ import sys
 import tempfile
 import urllib.parse
 
-f''  # Python >= 3.6 is required
+0_0  # Python >= 3.6 is required
 
 cache_dir = '/var/cache/apt/archives'
 
