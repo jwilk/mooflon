@@ -1,0 +1,90 @@
+Usage
+-----
+
+.. code:: console
+
+   $ mooflon --help
+   usage: mooflon [-h] (-p | -i DEB [DEB ...]) [-m] [--rewrite-url URL URL] APT INSTALL ...
+
+   positional arguments:
+     APT                   "apt" or "apt-get"
+     INSTALL               subcommand for "apt" or "apt-get", such as "install" or "upgrade"
+     ARGS                  remaining arguments for "apt install" or so
+
+   optional arguments:
+     -h, --help            show this help message and exit
+     -p, --print-urls      only print URLs for .deb files to download
+     -i DEB [DEB ...], --import-debs DEB [DEB ...]
+                           import these .deb files before install
+     -m, --move-debs       remove imported .deb files
+     --rewrite-url URL URL
+
+Example
+-------
+
+I wanted to install *frogatto*:
+
+.. code:: console
+
+   $ sudo apt-get install frogatto
+   Reading package lists... Done
+   Building dependency tree... Done
+   Reading state information... Done
+   The following additional packages will be installed:
+      frogatto-data (1.3.1+dfsg-3)
+   The following NEW packages will be installed:
+      frogatto (1.3.1+dfsg-5+b2)
+      frogatto-data (1.3.1+dfsg-3)
+   0 upgraded, 2 newly installed, 0 to remove and 9 not upgraded.
+   Need to get 227 MB of archives.
+   After this operation, 263 MB of additional disk space will be used.
+   Do you want to continue? [Y/n] n
+   Abort.
+
+OK, that's too much to handle for my Internet connection.
+
+Instead, I can ask *mooflon* for the list of download URLs
+and put it on a USB stick:
+
+.. code:: console
+
+   $ mooflon -p apt-get install frogatto | tee /media/sdx/deb-index
+   https://deb.debian.org/debian/pool/non-free/f/frogatto-data/frogatto-data_1.3.1%2bdfsg-3_all.deb
+   https://deb.debian.org/debian/pool/contrib/f/frogatto/frogatto_1.3.1%2bdfsg-5%2bb2_i386.deb
+
+Let's download the packages on a machine with a faster Internet connection:
+
+.. code:: console
+
+   $ cd /media/sdx
+
+   $ wget -nv -i deb-index
+   2022-01-19 23:37:42 URL:https://deb.debian.org/debian/pool/non-free/f/frogatto-data/frogatto-data_1.3.1%2bdfsg-3_all.deb [224725856/224725856] -> "frogatto-data_1.3.1+dfsg-3_all.deb" [1]
+   2022-01-19 23:37:42 URL:https://deb.debian.org/debian/pool/contrib/f/frogatto/frogatto_1.3.1%2bdfsg-5%2bb2_i386.deb [2091020/2091020] -> "frogatto_1.3.1+dfsg-5+b2_i386.deb" [1]
+   FINISHED --2022-01-19 23:37:42--
+   Total wall clock time: 14s
+   Downloaded: 2 files, 216M in 14s (15.9 MB/s)
+
+Now I can use *mooflon* to perform the install
+using the packages from the USB stick:
+
+.. code:: console
+
+   $ sudo mooflon -i /media/sdx/*.deb -- apt-get install frogatto
+   mooflon: /media/sdx/frogatto-data_1.3.1+dfsg-3_all.deb -> /var/cache/apt/archives/frogatto-data_1.3.1+dfsg-3_all.deb
+   mooflon: /media/sdx/frogatto_1.3.1+dfsg-5+b2_i386.deb -> /var/cache/apt/archives/frogatto_1.3.1+dfsg-5+b2_i386.deb
+   Reading package lists... Done
+   Building dependency tree... Done
+   Reading state information... Done
+   The following additional packages will be installed:
+      frogatto-data (1.3.1+dfsg-3)
+   The following NEW packages will be installed:
+      frogatto (1.3.1+dfsg-5+b2)
+      frogatto-data (1.3.1+dfsg-3)
+   0 upgraded, 2 newly installed, 0 to remove and 7 not upgraded.
+   Need to get 0 B/227 MB of archives.
+   After this operation, 263 MB of additional disk space will be used.
+   Do you want to continue? [Y/n] Y
+   ⋮
+
+.. vim:ft=rst ts=3 sts=3 sw=3 et
