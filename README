@@ -11,7 +11,7 @@ Usage
      INSTALL               subcommand for "apt" or "apt-get", such as "install" or "upgrade"
      ARGS                  remaining arguments for "apt install" or so
 
-   optional arguments:
+   options:
      -h, --help            show this help message and exit
      -p, --print-urls      only print URLs for .deb files to download
      -i DEB [DEB ...], --import-debs DEB [DEB ...]

@@ -20,6 +20,9 @@ cache_dir = '/var/cache/apt/archives'
 
 def main():
     ap = argparse.ArgumentParser()
+    if sys.version_info < (3, 10):
+        # https://bugs.python.org/issue9694
+        ap._optionals.title = 'options'
     ap.add_argument('apt', metavar='APT', choices=('apt', 'apt-get'), help='"apt" or "apt-get"')
     ap.add_argument('cmd', metavar='INSTALL',
         help='subcommand for "apt" or "apt-get", such as "install" or "upgrade"'
