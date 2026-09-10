@@ -65,7 +65,7 @@ Let's download the packages on a machine with a faster Internet connection:
    Total wall clock time: 14s
    Downloaded: 2 files, 216M in 14s (15.9 MB/s)
 
-Now I can use *mooflon* to perform the install
+Now I can use *mooflon* to perform the installation
 using the packages from the USB stick:
 
 .. code:: console
